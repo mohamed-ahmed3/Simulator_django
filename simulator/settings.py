@@ -40,6 +40,34 @@ INSTALLED_APPS = [
     'simulator_api',
 ]
 
+
+# Configure the logging settings
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'level': 'INFO',  # Adjust the logging level as needed
+            'class': 'logging.StreamHandler',
+        },
+        # Add more handlers if needed (e.g., file handler)
+    },
+    'root': {
+        'handlers': ['console'],  # Specify the handlers you want to use
+        'level': 'INFO',  # Adjust the logging level as needed
+    },
+    'loggers': {
+        # Define loggers for specific apps or modules if needed
+        'django': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        # Add more loggers for your apps or modules
+    },
+}
+
+
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
