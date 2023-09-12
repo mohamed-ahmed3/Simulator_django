@@ -52,7 +52,7 @@ class Configuration(models.Model):
 class SeasonalityComponentDetails(models.Model):
     frequency_type_choices = (("Daily", "daily"), ("Weekly", "weekly"), ("Monthly", "monthly"))
     amplitude = models.IntegerField()
-    phase_shift = models.IntegerField()
+    phase_shift = models.FloatField(max_length = 10)
     frequency_type = models.CharField(max_length=20, choices=frequency_type_choices)
     frequency_multiplier = models.FloatField(max_length=10)
 
