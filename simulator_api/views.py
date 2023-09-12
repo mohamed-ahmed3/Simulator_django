@@ -4,6 +4,8 @@ from rest_framework.generics import ListCreateAPIView
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.views import APIView
+import threading, time
+from django.http import StreamingHttpResponse
 
 from configuration_manager import ConfigurationManagerCreator
 from data_simulator import DataGenerator
@@ -66,7 +68,7 @@ class SimulatorView(ListCreateAPIView):
         self.perform_create(serializer)
 
         simulator = serializer.instance
-
+        print(simulator.status)
         for config_data in configuration_data:
             config_serializer = ConfigurationSerializer(data=config_data)
             if config_serializer.is_valid():
@@ -86,29 +88,101 @@ class SimulatorView(ListCreateAPIView):
                         status=status.HTTP_201_CREATED)
 
 
+simulator_threads = {}
+stop_simulator_flag = threading.Event()
+
+
 class SimulatorRunning(APIView):
     def post(self, request):
-        # Get the simulator name from the request data
         simulator_name = request.data.get("name")
-
-        # Check if the simulator name is provided in the POST data
         if not simulator_name:
             return Response(
                 {"error": "Simulator name is required in the POST data."},
                 status=status.HTTP_400_BAD_REQUEST
             )
         else:
-            configuration_manager = ConfigurationManagerCreator.create("db.sqlite3", simulator_name)
-            data_simulator = DataGenerator(configuration_manager)
-            meta_data_producer = DataProducerFileCreation.create('sample_datasets/meta_data.csv')
+            try:
+                simulator = Simulator.objects.get(name=simulator_name)
+            except Simulator.DoesNotExist:
+                return Response(
+                    {"error": f"Simulator with name '{simulator_name}' not found."},
+                    status=status.HTTP_404_NOT_FOUND
+                )
 
-            meta_data = []
-            for (data, meta_data_point) in data_simulator.generate():
-                DataProducerFileCreation.create(f"sample_datasets/{meta_data_point['id']}").produce(data)
-                meta_data.append(meta_data_point)
+            def run_simulator_in_background(simulator):
+                simulator.status = "Running"
+                simulator.save()
 
-            meta_data_producer.produce(meta_data)
+                try:
+                    print(simulator.status)
+                    configuration_manager = ConfigurationManagerCreator.create("db.sqlite3", simulator_name)
+                    data_simulator = DataGenerator(configuration_manager)
+                    meta_data_producer = DataProducerFileCreation.create('sample_datasets/meta_data.csv')
 
-            return Response({"running"}, status=status.HTTP_200_OK)
+                    meta_data = []
+                    for (data, meta_data_point) in data_simulator.generate():
+                        if stop_simulator_flag.is_set():
+                            return
+                        DataProducerFileCreation.create(f"sample_datasets/{meta_data_point['id']}").produce(data)
+                        meta_data.append(meta_data_point)
+
+                    meta_data_producer.produce(meta_data)
+
+                    simulator.status = "Succeeded"
+                    simulator.save()
+                    print(simulator.status)
+
+                except Exception as e:
+                    simulator.status = "Failed"
+                    simulator.save()
+                    print(str(e))
+                    return Response({simulator.name: "failed"}, status=status.HTTP_200_OK)
+
+                time.sleep(1)
+
+            simulator_thread = threading.Thread(target=run_simulator_in_background, args=(simulator,))
+            simulator_threads[simulator.process_id] = simulator_thread
+            simulator_thread.daemon = True
+            simulator_thread.start()
+
+            return Response({simulator.name: "Running"}, status=status.HTTP_200_OK)
 
 
+class StopSimulator(APIView):
+    def post(self, request):
+        simulator_name = request.data.get("name")
+
+        if not simulator_name:
+            return Response(
+                {"error": "Simulator name is required in the POST data."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        else:
+            try:
+                simulator = Simulator.objects.get(name=simulator_name)
+                simulator_thread = simulator_threads.get(simulator.process_id)
+
+                print(simulator_threads)
+                print(simulator_thread)
+
+                if simulator_thread:
+                    stop_simulator_flag.set()
+
+                    simulator_thread.join()
+
+                    del simulator_threads[simulator.process_id]
+
+                    simulator.status = "Failed"
+                    simulator.save()
+
+                    return Response({"message": f"{simulator_name}' stopped."},
+                                    status=status.HTTP_200_OK)
+
+                else:
+                    return Response({"message": f"Simulator '{simulator_name}' was not running."},
+                                    status=status.HTTP_200_OK)
+            except Simulator.DoesNotExist:
+                return Response(
+                    {"error": f"Simulator with name '{simulator_name}' not found."},
+                    status=status.HTTP_404_NOT_FOUND
+                )

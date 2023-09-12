@@ -67,18 +67,17 @@ class DataGenerator:
             self.trend_levels,
             self.cyclic_periods,
             self.percentage_outliers_options,
-            self.time_series_type,
         ]
 
         counter = 0
         #used the itertools.product to make all the combinations without the need of nested for loops
         for configs in product(*config_params):
-            daily_seasonality, weekly_seasonality, noise_level, trend, cyclic_period, percentage_outliers, time_series_type = configs
+            daily_seasonality, weekly_seasonality, noise_level, trend, cyclic_period, percentage_outliers= configs
 
             for _ in range(16):
                 freq = random.choice(self.frequencies)
                 counter += 1
-                file_name = f"TimeSeries_daily_{daily_seasonality}_weekly_{weekly_seasonality}_noise_{noise_level}_trend_{trend}_cycle_{cyclic_period}_outliers_{int(percentage_outliers * 100)}%_freq_{freq}_size_{time_series_type}Days.csv"
+                file_name = f"TimeSeries_daily_{daily_seasonality}_weekly_{weekly_seasonality}_noise_{noise_level}_trend_{trend}_cycle_{cyclic_period}_outliers_{int(percentage_outliers * 100)}%_freq_{freq}_size_{self.time_series_type}Days.csv"
                 print(f"File '{file_name}' generated.")
 
                 date_rng = TimeSeriesGenerator.generate_time_series(self.start_date,
@@ -87,17 +86,17 @@ class DataGenerator:
 
                 daily_seasonality_instance = DailySeasonality()
                 daily_seasonal_component = daily_seasonality_instance.add_seasonality(date_rng, daily_seasonality,
-                                                                                      season_type=time_series_type)
+                                                                                      season_type=self.time_series_type)
 
                 weekly_seasonality_instance = WeeklySeasonality()
                 weekly_seasonal_component = weekly_seasonality_instance.add_seasonality(date_rng, weekly_seasonality,
-                                                                                        season_type=time_series_type)
+                                                                                        season_type=self.time_series_type)
 
-                trend_component = Trend.add_trend(date_rng, trend, data_size=self.data_size, data_type=time_series_type)
+                trend_component = Trend.add_trend(date_rng, trend, data_size=self.data_size, data_type=self.time_series_type)
                 cyclic_period = "exist"
-                cyclic_component = Cycles.add_cycles(date_rng, cyclic_period, season_type=time_series_type)
+                cyclic_component = Cycles.add_cycles(date_rng, cyclic_period, season_type=self.time_series_type)
 
-                if time_series_type == 'multiplicative':
+                if self.time_series_type == 'multiplicative':
                     data = daily_seasonal_component * weekly_seasonal_component * trend_component * cyclic_component
                 else:
                     data = daily_seasonal_component + weekly_seasonal_component + trend_component + cyclic_component
@@ -110,7 +109,7 @@ class DataGenerator:
 
                 yield ({'value': data, 'timestamp': date_rng, 'anomaly': anomaly},
                        {'id': str(counter) + '.csv',
-                        'data_type': time_series_type,
+                        'data_type': self.time_series_type,
                         'daily_seasonality': daily_seasonality,
                         'weekly_seasonality': weekly_seasonality,
                         'noise (high 30% - low 10%)': noise_level,
