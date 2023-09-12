@@ -138,6 +138,11 @@ class SimulatorRunning(APIView):
                     print(str(e))
                     return Response({simulator.name: "failed"}, status=status.HTTP_200_OK)
 
+                finally:
+                    # Remove the thread from the dictionary when it finishes
+                    if simulator.process_id in simulator_threads:
+                        del simulator_threads[simulator.process_id]
+
                 time.sleep(1)
 
             simulator_thread = threading.Thread(target=run_simulator_in_background, args=(simulator,))
@@ -170,16 +175,14 @@ class StopSimulator(APIView):
 
                     simulator_thread.join()
 
-                    del simulator_threads[simulator.process_id]
-
                     simulator.status = "Failed"
                     simulator.save()
 
-                    return Response({"message": f"{simulator_name}' stopped."},
+                    return Response({"message": f"{simulator_name} stopped."},
                                     status=status.HTTP_200_OK)
 
                 else:
-                    return Response({"message": f"Simulator '{simulator_name}' was not running."},
+                    return Response({"message": f"{simulator_name} was not running."},
                                     status=status.HTTP_200_OK)
             except Simulator.DoesNotExist:
                 return Response(
