@@ -13,39 +13,6 @@ from data_producer import DataProducerFileCreation
 from .serializers import *
 
 
-class SeasonalityView(ListCreateAPIView):
-    queryset = SeasonalityComponentDetails.objects.all()
-    serializer_class = SeasonalitySerializer
-    pagination_class = PageNumberPagination
-
-
-class ConfigurationView(ListCreateAPIView):
-    queryset = Configuration.objects.all()
-    serializer_class = ConfigurationSerializer
-    pagination_class = PageNumberPagination
-
-    def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-
-        seasonality_data = request.data.pop('seasonality_components', [])
-
-        self.perform_create(serializer)
-
-        configuration = serializer.instance
-
-        for season_data in seasonality_data:
-            season_serializer = SeasonalitySerializer(data=season_data)
-            if season_serializer.is_valid():
-                season_serializer.save(
-                    config=configuration)
-            else:
-                pass
-
-        return Response({'detail': 'Simulator and related data created successfully.'},
-                        status=status.HTTP_201_CREATED)
-
-
 class SimulatorView(ListCreateAPIView):
     queryset = Simulator.objects.all()
     serializer_class = SimulatorSerializer
@@ -71,10 +38,20 @@ class SimulatorView(ListCreateAPIView):
         print(simulator.status)
         for config_data in configuration_data:
             config_serializer = ConfigurationSerializer(data=config_data)
+
             if config_serializer.is_valid():
-                config_serializer.save(simulator=simulator)
+                config_instance = config_serializer.save(simulator=simulator)
+
             else:
                 pass
+
+            if simulator.time_series_type == "Multiplicative":
+                config_instance.cycle_component_amplitude = 1
+
+            elif simulator.time_series_type == "Additive":
+                config_instance.cycle_component_amplitude = 0
+
+            config_instance.save()
 
         for season_data in seasonality_data:
             season_serializer = SeasonalitySerializer(data=season_data)
@@ -84,7 +61,7 @@ class SimulatorView(ListCreateAPIView):
             else:
                 pass
 
-        return Response({'detail': 'Simulator and related data created successfully.'},
+        return Response({'detail':'Simulator and related data created successfully.'},
                         status=status.HTTP_201_CREATED)
 
 

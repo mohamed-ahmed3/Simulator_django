@@ -13,7 +13,7 @@ class Simulator(models.Model):
     name = models.CharField(max_length=50, default='simulator', unique=True)
     start_date = models.DateTimeField()
     end_date = models.DateTimeField(blank=True, null=True)
-    data_size = models.IntegerField(blank=True, default=0, null=True)
+    data_size = models.IntegerField(blank=True, null=True, default=0)
     use_case_name = models.CharField(max_length=200)
     time_series_type = models.CharField(max_length=50, choices=time_series_type_choices)
     producer_type = models.CharField(max_length=20, choices=producer_type_choices)
@@ -31,21 +31,14 @@ class Configuration(models.Model):
     trend_coefficients = models.IntegerField(default=0)
     missing_percentage = models.IntegerField(default=0)
     outlier_percentage = models.IntegerField(default=0)
-    cycle_component_amplitude = models.IntegerField(editable=False)
+    cycle_component_amplitude = models.IntegerField(editable=False, null=True, default=0)
     cycle_component_frequency = models.IntegerField()
 
     simulator = models.ForeignKey(Simulator, related_name='configurations', on_delete=models.CASCADE, default=None)
     seasonality_components = models.ManyToManyField('SeasonalityComponentDetails', related_name='seasons', default=None)
 
     def save(self, *args, **kwargs):
-        # Access the associated Simulator instance
         simulator = self.simulator
-
-        if simulator.time_series_type == "Multiplicative":
-            self.cycle_component_amplitude = 1
-        elif simulator.time_series_type == "Additive":
-            self.cycle_component_amplitude = 0
-
         super(Configuration, self).save(*args, **kwargs)
 
 
