@@ -12,7 +12,13 @@ from data_producer import DataProducerFileCreation
 from .serializers import *
 
 
-class SimulatorView(ListCreateAPIView):
+class SimulatorListing(ListCreateAPIView):
+    queryset = Simulator.objects.all()
+    serializer_class = SimulatorSerializer
+    pagination_class = PageNumberPagination
+
+
+class SimulatorCreation(ListCreateAPIView):
     """
     View for creating and listing simulator instances and associated data.
 
@@ -31,7 +37,6 @@ class SimulatorView(ListCreateAPIView):
                                          an appropriate response.
 
     """
-    queryset = Simulator.objects.all()
     serializer_class = SimulatorSerializer
     pagination_class = PageNumberPagination
 
@@ -100,7 +105,7 @@ class SimulatorView(ListCreateAPIView):
             else:
                 pass
 
-        return Response({'detail':'Simulator and related data created successfully.'},
+        return Response({'detail': 'Simulator and related data created successfully.'},
                         status=status.HTTP_201_CREATED)
 
 
@@ -184,7 +189,7 @@ class SimulatorRunning(APIView):
             return Response({simulator.name: "Running"}, status=status.HTTP_200_OK)
 
 
-class StopSimulator(APIView):
+class SimulatorStopping(APIView):
     """
     Stop a running simulator.
 
@@ -201,6 +206,7 @@ class StopSimulator(APIView):
                   simulator is not found or if it was not running.
 
     """
+
     def post(self, request):
         simulator_name = request.data.get("name")
 

@@ -17,11 +17,9 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 
-from simulator_api.views import SimulatorView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('admin/simulator_api/simulator/add/', SimulatorView.as_view(), name='add_simulator'),
     path('simulator_api/', include("simulator_api.urls")),
 
 ]
