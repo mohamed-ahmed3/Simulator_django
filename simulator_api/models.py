@@ -30,12 +30,12 @@ class Simulator(models.Model):
     start_date = models.DateTimeField()
     end_date = models.DateTimeField(blank=True, null=True)
     data_size = models.IntegerField(blank=True, null=True, default=0)
-    use_case_name = models.CharField(max_length=200)
+    use_case_name = models.CharField(max_length=200, unique=True)
     time_series_type = models.CharField(max_length=50, choices=time_series_type_choices)
     producer_type = models.CharField(max_length=20, choices=producer_type_choices)
     process_id = models.AutoField(primary_key=True)
-    metadata = models.CharField(max_length=100, editable=False, default=None, null=True)
     status = models.CharField(max_length=100, choices=status_choices, editable=False, default='Submitted')
+    metadata = models.JSONField(null=True, editable=False)
 
     datasets = models.ManyToManyField('Configuration', related_name='configs', default=None)
 

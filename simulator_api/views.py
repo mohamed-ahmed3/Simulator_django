@@ -5,6 +5,8 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.views import APIView
 import threading, time
+import json
+import csv
 
 from configuration_manager import ConfigurationManagerCreator
 from data_simulator import DataGenerator
@@ -163,7 +165,16 @@ class SimulatorRunning(APIView):
                         meta_data.append(meta_data_point)
 
                     meta_data_producer.produce(meta_data)
+                    path = 'sample_datasets/meta_data.csv'
 
+                    data = []
+                    with open(path, 'r') as csv_file:
+                        csv_reader = csv.DictReader(csv_file)
+                        for row in csv_reader:
+                            data.append(row)
+
+                    data_json = json.dumps(data)
+                    simulator.metadata = data_json
                     simulator.status = "Succeeded"
                     simulator.save()
                     print(simulator.status)
@@ -219,9 +230,6 @@ class SimulatorStopping(APIView):
             try:
                 simulator = Simulator.objects.get(name=simulator_name)
                 simulator_thread = simulator_threads.get(simulator.process_id)
-
-                print(simulator_threads)
-                print(simulator_thread)
 
                 if simulator_thread:
                     stop_simulator_flag.set()

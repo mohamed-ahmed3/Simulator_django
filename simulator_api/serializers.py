@@ -125,7 +125,7 @@ class SimulatorSerializer(serializers.ModelSerializer):
             'time_series_type',
             'producer_type',
             'process_id',
-            'metadata',
             'status',
+            'metadata',
             'datasets'
         ]
