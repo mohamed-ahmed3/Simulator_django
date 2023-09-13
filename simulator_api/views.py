@@ -1,3 +1,5 @@
+import os
+
 from django.http import JsonResponse
 from rest_framework import status
 from rest_framework.generics import ListCreateAPIView
@@ -155,7 +157,9 @@ class SimulatorRunning(APIView):
                     print(simulator.status)
                     configuration_manager = ConfigurationManagerCreator.create("db.sqlite3", simulator_name)
                     data_simulator = DataGenerator(configuration_manager)
-                    meta_data_producer = DataProducerFileCreation.create('sample_datasets/meta_data.csv')
+                    csv_file_name = f"{simulator_name}_data.csv"
+                    csv_file_path = os.path.join('sample_datasets', csv_file_name)
+                    meta_data_producer = DataProducerFileCreation.create(csv_file_path)
 
                     meta_data = []
                     for (data, meta_data_point) in data_simulator.generate():
