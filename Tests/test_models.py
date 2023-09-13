@@ -4,7 +4,12 @@ from simulator_api.models import *
 
 
 class TestSimulator(unittest.TestCase):
+    """
+    A class to test the simulator model. It sets up the environment with simulator data.
 
+    methods:
+        test_simulator_creation
+    """
     def setUp(self):
         self.simulator_data = {
             "name": "Test Simulator",
@@ -17,6 +22,10 @@ class TestSimulator(unittest.TestCase):
             "status": "Submitted"
         }
 
+    """
+    This function tests the successful creation of the model. It asserts the equality of 
+    some fields such as: name, status, and producer_type.
+    """
     def test_simulator_creation(self):
         simulator = Simulator(**self.simulator_data)
         self.assertEqual(simulator.name, "Test Simulator")
@@ -25,7 +34,12 @@ class TestSimulator(unittest.TestCase):
 
 
 class TestConfiguration(unittest.TestCase):
+    """
+    A class to test the configuration model. It sets up the environment with configuration data.
 
+    methods:
+        test_configuration_creation
+    """
     def setUp(self):
         self.configuration_data = {
             "frequency": "1H",
@@ -33,7 +47,12 @@ class TestConfiguration(unittest.TestCase):
             "trend_coefficients": 3
         }
 
-    def test_simulator_creation(self):
+    """
+    This function tests the successful creation of the model. It asserts the equality of 
+    some fields such as: frequency, noise_level, and trend_coefficients.
+    """
+
+    def test_configuration_creation(self):
         configurator = Configuration(**self.configuration_data)
         self.assertEqual(configurator.frequency, "1H")
         self.assertEqual(configurator.noise_level, 3)
@@ -41,7 +60,12 @@ class TestConfiguration(unittest.TestCase):
 
 
 class TestSeasonality(unittest.TestCase):
+    """
+    A class to test the seasonality model. It sets up the environment with seasonality data.
 
+    methods:
+        test_seasonality_creation
+    """
     def setUp(self):
         self.seasonality_data = {
             "amplitude": 2,
@@ -49,7 +73,11 @@ class TestSeasonality(unittest.TestCase):
             "frequency_type": "Daily"
         }
 
-    def test_simulator_creation(self):
+    """
+    This function tests the successful creation of the model. It asserts the equality of 
+    some fields such as: amplitude, phase_shift, frequency_type.
+    """
+    def test_seasonality_creation(self):
         seasonality = SeasonalityComponentDetails(**self.seasonality_data)
         self.assertEqual(seasonality.amplitude, 2)
         self.assertEqual(seasonality.phase_shift, 3)
