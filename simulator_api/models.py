@@ -47,9 +47,9 @@ class Configuration(models.Model):
     attributes:
         frequency (str): The frequency of data points (e.g., '1D' for daily, '1H' for hourly).
         noise_level (int): The noise level in the generated data.
-        trend_coefficients (int, optional): The number of trend coefficients (optional, default is 0).
-        missing_percentage (int, optional): The percentage of missing data points (optional, default is 0).
-        outlier_percentage (int, optional): The percentage of outlier data points (optional, default is 0).
+        trend_coefficients (json): The trend coefficients.
+        missing_percentage (float, optional): The percentage of missing data points (optional, default is 0).
+        outlier_percentage (float, optional): The percentage of outlier data points (optional, default is 0).
         cycle_component_amplitude (int, optional): The amplitude of the cycle component (editable, null, default is 0).
         cycle_component_frequency (int): The frequency of the cycle component.
         simulator (ForeignKey): The associated simulator for data generation.
