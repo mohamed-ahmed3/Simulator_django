@@ -58,9 +58,9 @@ class Configuration(models.Model):
     frequency_choice = (("1D","1D"),("10T","10T"),("30T","30T"),("1H","1H"), ("6H","6H"), ("8H","8H"))
     frequency = models.CharField(max_length=20, choices=frequency_choice)
     noise_level = models.IntegerField()
-    trend_coefficients = models.IntegerField(default=0)
-    missing_percentage = models.IntegerField(default=0)
-    outlier_percentage = models.IntegerField(default=0)
+    trend_coefficients = models.JSONField(default=0)
+    missing_percentage = models.FloatField(default=0)
+    outlier_percentage = models.FloatField(default=0)
     cycle_component_amplitude = models.IntegerField(editable=False, null=True, default=0)
     cycle_component_frequency = models.IntegerField()
 

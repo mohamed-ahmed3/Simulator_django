@@ -169,10 +169,10 @@ class SimulatorRunning(APIView):
                         meta_data.append(meta_data_point)
 
                     meta_data_producer.produce(meta_data)
-                    path = 'sample_datasets/meta_data.csv'
+                    # path = 'sample_datasets/meta_data.csv'
 
                     data = []
-                    with open(path, 'r') as csv_file:
+                    with open(csv_file_path, 'r') as csv_file:
                         csv_reader = csv.DictReader(csv_file)
                         for row in csv_reader:
                             data.append(row)
