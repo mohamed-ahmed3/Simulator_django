@@ -37,8 +37,6 @@ class Simulator(models.Model):
     status = models.CharField(max_length=100, choices=status_choices, editable=False, default='Submitted')
     metadata = models.JSONField(null=True, editable=False)
 
-    datasets = models.ManyToManyField('Configuration', related_name='configs', default=None)
-
 
 class Configuration(models.Model):
     """
@@ -55,7 +53,7 @@ class Configuration(models.Model):
         simulator (ForeignKey): The associated simulator for data generation.
         seasonality_components (ManyToManyField): Related seasonality component details.
         """
-    frequency_choice = (("1D","1D"),("10T","10T"),("30T","30T"),("1H","1H"), ("6H","6H"), ("8H","8H"))
+    frequency_choice = (("1D", "1D"), ("10T", "10T"), ("30T", "30T"), ("1H", "1H"), ("6H", "6H"), ("8H", "8H"))
     frequency = models.CharField(max_length=20, choices=frequency_choice)
     noise_level = models.IntegerField()
     trend_coefficients = models.JSONField(default=0)
@@ -65,7 +63,6 @@ class Configuration(models.Model):
     cycle_component_frequency = models.IntegerField()
 
     simulator = models.ForeignKey(Simulator, related_name='configurations', on_delete=models.CASCADE, default=None)
-    seasonality_components = models.ManyToManyField('SeasonalityComponentDetails', related_name='seasons', default=None)
 
 
 class SeasonalityComponentDetails(models.Model):
@@ -82,7 +79,7 @@ class SeasonalityComponentDetails(models.Model):
     """
     frequency_type_choices = (("Daily", "daily"), ("Weekly", "weekly"), ("Monthly", "monthly"))
     amplitude = models.IntegerField()
-    phase_shift = models.FloatField(max_length = 10)
+    phase_shift = models.FloatField(max_length=10)
     frequency_type = models.CharField(max_length=20, choices=frequency_type_choices)
     frequency_multiplier = models.FloatField(max_length=10)
 

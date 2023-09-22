@@ -155,7 +155,7 @@ class SimulatorRunning(APIView):
 
                 try:
                     print(simulator.status)
-                    configuration_manager = ConfigurationManagerCreator.create("db.sqlite3", simulator_name)
+                    configuration_manager = ConfigurationManagerCreator.create("db", simulator_name)
                     data_simulator = DataGenerator(configuration_manager)
                     csv_file_name = f"{simulator_name}_data.csv"
                     csv_file_path = os.path.join('sample_datasets', csv_file_name)

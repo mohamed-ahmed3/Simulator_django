@@ -81,7 +81,7 @@ class DataGenerator:
                 print(f"File '{file_name}' generated.")
 
                 date_rng = TimeSeriesGenerator.generate_time_series(self.start_date,
-                                                                    datetime.strptime(self.start_date, "%Y-%m-%d %H:%M:%S") + timedelta(days=self.data_size),
+                                                                    self.start_date + timedelta(days=self.data_size),
                                                                     freq)
 
                 daily_seasonality_instance = DailySeasonality()

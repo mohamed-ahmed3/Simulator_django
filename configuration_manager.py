@@ -5,6 +5,8 @@ import yaml
 import json
 from datetime import datetime
 
+from simulator_api.models import Simulator
+
 
 class ConfigurationManagerCreator:
     def __init__(self, source: str, simulator_name):
@@ -32,18 +34,15 @@ class ConfigurationManagerCreator:
         elif source.endswith('.json'):
             return JsonConfigurationManager(source)
 
-        elif source.endswith('.sqlite3'):
-            return DatabaseReader(source, simulator_name)
-
         else:
-            raise Exception(f"Unsupported source: {source}")
+            return DatabaseReader(source, simulator_name)
 
 
 class ConfigurationManager(ABC):
     """
     An abstract class that provides a configuration manager framework.
     methods:
-        __init__: Initializes the configuration manager instance.
+        _init_: Initializes the configuration manager instance.
         create: Factory method to create an instance of a specific configuration manager.
         read: Abstract method for reading configuration data from a source.
 
@@ -206,77 +205,85 @@ class JsonConfigurationManager(ConfigurationManager):
 
 
 class DatabaseReader(ConfigurationManager):
-    def __init__(self, source, simulator_name):
+    def __init__(self, source: str, simulator_name):
         self.source = source
         self.simulator_name = simulator_name
         self.configs = self.read()
 
     def read(self):
 
-        conn = sqlite3.connect(self.source)
-        cursor = conn.cursor()
+        try:
+            simulator = Simulator.objects.get(name=self.simulator_name)
+        except Simulator.DoesNotExist:
+            return None
 
-        cursor.execute("SELECT * FROM simulator_api_simulator WHERE name=?", (self.simulator_name,))
-        simulator_row = cursor.fetchone()
+        simulator_data = {
+            'name': simulator.name,
+            'start_date': simulator.start_date,
+            'end_date':simulator.end_date,
+            'data_size': simulator.data_size,
+            'use_case_name':simulator.use_case_name,
+            'time_series_type':simulator.time_series_type,
+            'producer_type':simulator.producer_type,
+            'process_id':simulator.process_id,
+            'status':simulator.status,
+            'metadata':simulator.metadata,
+            'configurations': []
+        }
 
-        if simulator_row is None:
-            cursor.close()
-            conn.close()
-            return
+        configurations_data = []
 
-        simulator_columns = [desc[0] for desc in cursor.description]
+        for configuration in simulator.configurations.all():
+            config_data = {
+                'frequency': configuration.frequency,
+                'noise_level': configuration.noise_level,
+                'trend_coefficients': configuration.trend_coefficients,
+                'missing_percentage':configuration.missing_percentage,
+                'outlier_percentage': configuration.outlier_percentage,
+                'cycle_component_amplitude':configuration.cycle_component_amplitude,
+                'cycle_component_frequency': configuration.cycle_component_frequency,
+                'seasons': []
+            }
 
-        if simulator_columns is None:
-            cursor.close()
-            conn.close()
-            return
-        simulator_data = dict(zip(simulator_columns, simulator_row))
+            for seasonality_component in configuration.seasons.all():
+                seasonality_data = {
+                    'amplitude':seasonality_component.amplitude,
+                    'phase_shift':seasonality_component.phase_shift,
+                    'frequency_type': seasonality_component.frequency_type,
+                    'frequency_multiplier':seasonality_component.frequency_multiplier
+                }
+                config_data['seasons'].append(seasonality_data)
 
-        cursor.execute("SELECT * FROM simulator_api_configuration WHERE simulator_id=?",
-                       (simulator_data['process_id'],))
+            configurations_data.append(config_data)
 
-        configurations_rows = cursor.fetchall()
+        simulator_data['configurations']=configurations_data
 
-        configurations_columns = [desc[0] for desc in cursor.description]
-        configurations_data = [dict(zip(configurations_columns, row)) for row in configurations_rows]
-
+        # Move the following code here to ensure it has access to self.simulator_name
         frequencies = [config_data['frequency'] for config_data in configurations_data]
         noise_level = [config_data['noise_level'] for config_data in configurations_data]
         trends = [config_data['trend_coefficients'] for config_data in configurations_data]
         cycles = [config_data['cycle_component_frequency'] for config_data in configurations_data]
         outliers = [config_data['outlier_percentage'] for config_data in configurations_data]
 
+        daily_seasonality_options = []
+        weekly_seasonality_options = []
+
         for config_data in configurations_data:
-            cursor.execute("SELECT * FROM simulator_api_seasonalitycomponentdetails WHERE config_id=?",
-                           (config_data['id'],))
-            seasonality_rows = cursor.fetchall()
-
-            seasonality_columns = [desc[0] for desc in cursor.description]
-            seasonality_data = [dict(zip(seasonality_columns, row)) for row in seasonality_rows]
-
-            daily_seasonality_options = []
-            weekly_seasonality_options = []
-
-            for season_data in seasonality_data:
+            for season_data in config_data['seasons']:
                 if season_data['frequency_type'] == 'Daily':
                     daily_seasonality_options.append("exist")
                     weekly_seasonality_options.append("none")
-
                 elif season_data['frequency_type'] == 'Weekly':
                     daily_seasonality_options.append("none")
                     weekly_seasonality_options.append("exist")
 
-            config_data['seasonality_components'] = seasonality_data
-        cursor.close()
-        conn.close()
-
         simulator_data['configurations'] = configurations_data
         simulator_data['frequencies'] = frequencies
         simulator_data['daily_seasonality_options'] = daily_seasonality_options
-        simulator_data['weekly_seasonality_options'] =weekly_seasonality_options
+        simulator_data['weekly_seasonality_options'] = weekly_seasonality_options
         simulator_data['noise_levels'] = noise_level
         simulator_data['trend_levels'] = trends
         simulator_data['cyclic_periods'] = cycles
         simulator_data['percentage_outliers_options'] = outliers
 
-        return (simulator_data)
+        return simulator_data
