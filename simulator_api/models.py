@@ -33,7 +33,7 @@ class Simulator(models.Model):
     use_case_name = models.CharField(max_length=200, unique=True)
     time_series_type = models.CharField(max_length=50, choices=time_series_type_choices)
     producer_type = models.CharField(max_length=20, choices=producer_type_choices)
-    process_id = models.AutoField(primary_key=True)
+    process_id = models.UUIDField(primary_key=True, default=uuid.uuid4)
     status = models.CharField(max_length=100, choices=status_choices, editable=False, default='Submitted')
     metadata = models.JSONField(null=True, editable=False)
 
