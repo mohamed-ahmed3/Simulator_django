@@ -111,7 +111,8 @@ DATABASES = {
         'PASSWORD': '123456',
         'HOST': 'db',
         'PORT': '5432',
-    }
+    },
+
 }
 
 # Password validation
