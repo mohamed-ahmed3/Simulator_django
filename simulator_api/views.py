@@ -10,7 +10,7 @@ import threading, time
 import json
 import csv
 
-from configuration_manager import ConfigurationManagerCreator
+from configuration_manager_creator import ConfigurationManagerCreator
 from data_simulator import DataGenerator
 from data_producer import DataProducerFileCreation
 from .serializers import *
@@ -73,13 +73,6 @@ class SimulatorCreation(ListCreateAPIView):
         configuration_data = request.data.pop('datasets', [])
         seasonality_data = request.data.pop('seasonality_components', [])
 
-        end_date = serializer.validated_data.get('end_date')
-        data_size = serializer.validated_data.get('data_size')
-
-        if not end_date and not data_size:
-            return Response({'detail': 'Even one of end_date or data_size should have a value.'},
-                            status=status.HTTP_400_BAD_REQUEST)
-
         self.perform_create(serializer)
 
         simulator = serializer.instance
@@ -92,12 +85,6 @@ class SimulatorCreation(ListCreateAPIView):
 
             else:
                 pass
-
-            if simulator.time_series_type == "Multiplicative":
-                config_instance.cycle_component_amplitude = 1
-
-            elif simulator.time_series_type == "Additive":
-                config_instance.cycle_component_amplitude = 0
 
             config_instance.save()
 

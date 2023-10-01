@@ -111,6 +111,7 @@ class SimulatorSerializer(serializers.ModelSerializer):
 
         if end_date is not None and data_size is not None:
             raise serializers.ValidationError("Choose either 'end_date' or 'data_size', but not both.")
+        super().validate(data)
 
         return data
 

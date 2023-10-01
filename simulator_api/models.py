@@ -1,7 +1,6 @@
 import uuid
 
 from django.db import models
-from django.core.exceptions import ValidationError
 
 
 class Simulator(models.Model):
@@ -63,6 +62,14 @@ class Configuration(models.Model):
     cycle_component_frequency = models.IntegerField()
 
     simulator = models.ForeignKey(Simulator, related_name='configurations', on_delete=models.CASCADE, default=None)
+
+    def save(self, force_insert=False, force_update=False, using=None,
+             update_fields=None):
+        if self.simulator.time_series_type == "Multiplicative":
+            self.cycle_component_amplitude = 1
+        elif self.simulator.time_series_type == "Additive":
+            self.cycle_component_amplitude = 0
+        super().save()
 
 
 class SeasonalityComponentDetails(models.Model):
