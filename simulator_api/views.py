@@ -6,6 +6,7 @@ from rest_framework.generics import ListCreateAPIView
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from django.db import transaction
 import threading, time
 import json
 import csv
@@ -44,6 +45,7 @@ class SimulatorCreation(ListCreateAPIView):
     serializer_class = SimulatorSerializer
     pagination_class = PageNumberPagination
 
+    @transaction.atomic
     def create(self, request, *args, **kwargs):
         """
         Create a new simulator instance and associated data.
@@ -105,6 +107,7 @@ stop_simulator_flag = threading.Event()
 
 
 class SimulatorRunning(APIView):
+    @transaction.atomic
     def post(self, request):
         """
         Start running a simulator in the background.
@@ -156,7 +159,6 @@ class SimulatorRunning(APIView):
                         meta_data.append(meta_data_point)
 
                     meta_data_producer.produce(meta_data)
-                    # path = 'sample_datasets/meta_data.csv'
 
                     data = []
                     with open(csv_file_path, 'r') as csv_file:
@@ -209,6 +211,7 @@ class SimulatorStopping(APIView):
 
     """
 
+    @transaction.atomic
     def post(self, request):
         simulator_name = request.data.get("name")
 
