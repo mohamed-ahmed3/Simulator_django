@@ -103,7 +103,7 @@ class SimulatorCreation(ListCreateAPIView):
 
 
 simulator_threads = {}
-stop_simulator_flag = threading.Event()
+stop_simulator_flags = {}
 
 
 class SimulatorRunning(APIView):
@@ -143,6 +143,7 @@ class SimulatorRunning(APIView):
                 simulator.status = "Running"
                 simulator.save()
 
+                stop_simulator_flags[simulator.process_id] = threading.Event()
                 try:
                     print(simulator.status)
                     configuration_manager = ConfigurationManagerCreator.create("db", simulator_name)
@@ -153,7 +154,8 @@ class SimulatorRunning(APIView):
 
                     meta_data = []
                     for (data, meta_data_point) in data_simulator.generate():
-                        if stop_simulator_flag.is_set():
+                        if stop_simulator_flags[simulator.process_id].is_set():
+                            del stop_simulator_flags[simulator.process_id]
                             return
                         DataProducerFileCreation.create(f"sample_datasets/{meta_data_point['id']}").produce(data)
                         meta_data.append(meta_data_point)
@@ -182,7 +184,7 @@ class SimulatorRunning(APIView):
                     # Remove the thread from the dictionary when it finishes
                     if simulator.process_id in simulator_threads:
                         del simulator_threads[simulator.process_id]
-
+                        del stop_simulator_flags[simulator.process_id]
                 time.sleep(1)
 
             simulator_thread = threading.Thread(target=run_simulator_in_background, args=(simulator,))
@@ -226,7 +228,7 @@ class SimulatorStopping(APIView):
                 simulator_thread = simulator_threads.get(simulator.process_id)
 
                 if simulator_thread:
-                    stop_simulator_flag.set()
+                    stop_simulator_flags[simulator.process_id].set()
 
                     simulator_thread.join()
 
