@@ -108,7 +108,7 @@ stop_simulator_flags = {}
 
 class SimulatorRunning(APIView):
     @transaction.atomic
-    def post(self, request):
+    def post(self, request, simulator_name):
         """
         Start running a simulator in the background.
 
@@ -124,75 +124,67 @@ class SimulatorRunning(APIView):
                       is not found or if an error occurs during execution.
 
         """
-        simulator_name = request.data.get("name")
-        if not simulator_name:
+        try:
+            simulator = Simulator.objects.get(name=simulator_name)
+        except Simulator.DoesNotExist:
             return Response(
-                {"error": "Simulator name is required in the POST data."},
-                status=status.HTTP_400_BAD_REQUEST
+                {"error": f"Simulator with name '{simulator_name}' not found."},
+                status=status.HTTP_404_NOT_FOUND
             )
-        else:
+
+        def run_simulator_in_background(simulator):
+            simulator.status = "Running"
+            simulator.save()
+
+            stop_simulator_flags[simulator.process_id] = threading.Event()
             try:
-                simulator = Simulator.objects.get(name=simulator_name)
-            except Simulator.DoesNotExist:
-                return Response(
-                    {"error": f"Simulator with name '{simulator_name}' not found."},
-                    status=status.HTTP_404_NOT_FOUND
-                )
+                print(simulator.status)
+                configuration_manager = ConfigurationManagerCreator.create("db", simulator.name)
+                data_simulator = DataGenerator(configuration_manager)
+                csv_file_name = f"{simulator.name}_data.csv"
+                csv_file_path = os.path.join('sample_datasets', csv_file_name)
+                meta_data_producer = DataProducerFileCreation.create(csv_file_path)
 
-            def run_simulator_in_background(simulator):
-                simulator.status = "Running"
-                simulator.save()
-
-                stop_simulator_flags[simulator.process_id] = threading.Event()
-                try:
-                    print(simulator.status)
-                    configuration_manager = ConfigurationManagerCreator.create("db", simulator_name)
-                    data_simulator = DataGenerator(configuration_manager)
-                    csv_file_name = f"{simulator_name}_data.csv"
-                    csv_file_path = os.path.join('sample_datasets', csv_file_name)
-                    meta_data_producer = DataProducerFileCreation.create(csv_file_path)
-
-                    meta_data = []
-                    for (data, meta_data_point) in data_simulator.generate():
-                        if stop_simulator_flags[simulator.process_id].is_set():
-                            del stop_simulator_flags[simulator.process_id]
-                            return
-                        DataProducerFileCreation.create(f"sample_datasets/{meta_data_point['id']}").produce(data)
-                        meta_data.append(meta_data_point)
-
-                    meta_data_producer.produce(meta_data)
-
-                    data = []
-                    with open(csv_file_path, 'r') as csv_file:
-                        csv_reader = csv.DictReader(csv_file)
-                        for row in csv_reader:
-                            data.append(row)
-
-                    data_json = json.dumps(data)
-                    simulator.metadata = data_json
-                    simulator.status = "Succeeded"
-                    simulator.save()
-                    print(simulator.status)
-
-                except Exception as e:
-                    simulator.status = "Failed"
-                    simulator.save()
-                    print(str(e))
-                    return Response({simulator.name: "failed"}, status=status.HTTP_200_OK)
-
-                finally:
-                    # Remove the thread from the dictionary when it finishes
-                    if simulator.process_id in simulator_threads:
-                        del simulator_threads[simulator.process_id]
+                meta_data = []
+                for (data, meta_data_point) in data_simulator.generate():
+                    if stop_simulator_flags[simulator.process_id].is_set():
                         del stop_simulator_flags[simulator.process_id]
-                time.sleep(1)
+                        return
+                    DataProducerFileCreation.create(f"sample_datasets/{meta_data_point['id']}").produce(data)
+                    meta_data.append(meta_data_point)
 
-            simulator_thread = threading.Thread(target=run_simulator_in_background, args=(simulator,))
-            simulator_threads[simulator.process_id] = simulator_thread
-            simulator_thread.daemon = True
-            simulator_thread.start()
+                meta_data_producer.produce(meta_data)
 
-            return Response({simulator.name: "Running"}, status=status.HTTP_200_OK)
+                data = []
+                with open(csv_file_path, 'r') as csv_file:
+                    csv_reader = csv.DictReader(csv_file)
+                    for row in csv_reader:
+                        data.append(row)
+
+                data_json = json.dumps(data)
+                simulator.metadata = data_json
+                simulator.status = "Succeeded"
+                simulator.save()
+                print(simulator.status)
+
+            except Exception as e:
+                simulator.status = "Failed"
+                simulator.save()
+                print(str(e))
+                return Response({simulator.name: "failed"}, status=status.HTTP_200_OK)
+
+            finally:
+                if simulator.process_id in simulator_threads:
+                    del simulator_threads[simulator.process_id]
+                    del stop_simulator_flags[simulator.process_id]
+            time.sleep(1)
+
+        simulator_thread = threading.Thread(target=run_simulator_in_background, args=(simulator,))
+        simulator_threads[simulator.process_id] = simulator_thread
+        simulator_thread.daemon = True
+        simulator_thread.start()
+
+        return Response({simulator.name: "Running"}, status=status.HTTP_200_OK)
 
 
 class SimulatorStopping(APIView):
@@ -214,8 +206,7 @@ class SimulatorStopping(APIView):
     """
 
     @transaction.atomic
-    def post(self, request):
-        simulator_name = request.data.get("name")
+    def post(self, request, simulator_name):
 
         if not simulator_name:
             return Response(
