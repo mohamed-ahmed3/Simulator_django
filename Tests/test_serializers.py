@@ -22,11 +22,11 @@ class TestSeasonalitySerializer(TestCase):
             'frequency_type': 'Daily',
             'frequency_multiplier': 2.0}
 
-    """
-    This method tests the successful serialization of the seasonality model.
-    It asserts if the serializer is valid or not. 
-    """
     def test_seasonality_serializer(self):
+        """
+        This method tests the successful serialization of the seasonality model.
+        It asserts if the serializer is valid or not.
+        """
         serializer = SeasonalitySerializer(data=self.valid_data)
         self.assertTrue(serializer.is_valid())
 
@@ -66,18 +66,18 @@ class TestConfiguraionSerializer(TestCase):
             ]
         }
 
-    """
-    This method tests the successful serialization of the configuration model.
-    It asserts if the serializer is valid or not. 
-    """
     def test_configuration_serializer(self):
+        """
+        This method tests the successful serialization of the configuration model.
+        It asserts if the serializer is valid or not.
+        """
         serializer = ConfigurationSerializer(data=self.valid_data)
         self.assertTrue(serializer.is_valid())
 
 
 class TestSimulatorSerializer(TestCase):
     """
-    Thid class tests the serialization of the simulator model.
+    This class tests the serialization of the simulator model.
     It sets up the data needed for the simulator model.
 
     methods:
@@ -109,11 +109,11 @@ class TestSimulatorSerializer(TestCase):
                                      "frequency_type": "Weekly",
                                      "frequency_multiplier": 2.1}]}]}
 
-    """
-    This method tests the successful serialization of the simulator model.
-    It asserts if the serializer is valid or not. 
-    """
     def test_simulator_serializer(self):
+        """
+        This method tests the successful serialization of the simulator model.
+        It asserts if the serializer is valid or not.
+        """
         serializer = SimulatorSerializer(data=self.valid_data)
         self.assertTrue(serializer.is_valid())
 

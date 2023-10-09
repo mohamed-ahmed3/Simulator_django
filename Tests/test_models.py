@@ -22,11 +22,11 @@ class TestSimulator(unittest.TestCase):
             "status": "Submitted"
         }
 
-    """
-    This function tests the successful creation of the model. It asserts the equality of 
-    some fields such as: name, status, and producer_type.
-    """
     def test_simulator_creation(self):
+        """
+        This function tests the successful creation of the model. It asserts the equality of
+        some fields such as: name, status, and producer_type.
+        """
         simulator = Simulator(**self.simulator_data)
         self.assertEqual(simulator.name, "Test Simulator")
         self.assertEqual(simulator.status, "Submitted")
@@ -47,12 +47,12 @@ class TestConfiguration(unittest.TestCase):
             "trend_coefficients": 3
         }
 
-    """
-    This function tests the successful creation of the model. It asserts the equality of 
-    some fields such as: frequency, noise_level, and trend_coefficients.
-    """
 
     def test_configuration_creation(self):
+        """
+        This function tests the successful creation of the model. It asserts the equality of
+        some fields such as: frequency, noise_level, and trend_coefficients.
+        """
         configurator = Configuration(**self.configuration_data)
         self.assertEqual(configurator.frequency, "1H")
         self.assertEqual(configurator.noise_level, 3)
@@ -73,11 +73,11 @@ class TestSeasonality(unittest.TestCase):
             "frequency_type": "Daily"
         }
 
-    """
-    This function tests the successful creation of the model. It asserts the equality of 
-    some fields such as: amplitude, phase_shift, frequency_type.
-    """
     def test_seasonality_creation(self):
+        """
+        This function tests the successful creation of the model. It asserts the equality of
+        some fields such as: amplitude, phase_shift, frequency_type.
+        """
         seasonality = SeasonalityComponentDetails(**self.seasonality_data)
         self.assertEqual(seasonality.amplitude, 2)
         self.assertEqual(seasonality.phase_shift, 3)
