@@ -24,14 +24,13 @@ class Simulator(models.Model):
     producer_type_choices = (("Kafka", "kafka"), ("CSV", "csv file"))
     status_choices = (
         ("Submitted", "submitted"), ("Running", "running"), ("Succeeded", "succeeded"), ("Failed", "failed"))
-
     name = models.CharField(max_length=50, default='simulator', unique=True)
     start_date = models.DateTimeField()
     end_date = models.DateTimeField(blank=True, null=True)
     data_size = models.IntegerField(blank=True, null=True, default=0)
     use_case_name = models.CharField(max_length=200, unique=True)
     time_series_type = models.CharField(max_length=50, choices=time_series_type_choices)
-    producer_type = models.CharField(max_length=20, choices=producer_type_choices)
+    sink_name = models.CharField(max_length=20, choices=producer_type_choices)
     process_id = models.UUIDField(primary_key=True, default=uuid.uuid4)
     status = models.CharField(max_length=100, choices=status_choices, editable=False, default='Submitted')
     metadata = models.JSONField(null=True, editable=False)
@@ -60,6 +59,8 @@ class Configuration(models.Model):
     outlier_percentage = models.FloatField(default=0)
     cycle_component_amplitude = models.IntegerField(editable=False, null=True, default=0)
     cycle_component_frequency = models.IntegerField()
+    generator_id = models.CharField(max_length=50, null=True)
+    attribute_id = models.CharField(max_length=50, null=True)
 
     simulator = models.ForeignKey(Simulator, related_name='configurations', on_delete=models.CASCADE, default=None)
 

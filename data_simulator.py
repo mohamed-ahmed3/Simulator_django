@@ -105,16 +105,16 @@ class DataGenerator:
                 data, anomaly = outliers_creation.Outliers.add_outliers(data, percentage_outliers)
                 data = missing_values_creation.MissingValues.add_missing_values(data, 0.05)
 
-                try:
-                    url = "http://Apachi_NIFI:8443"
-                    data_list = str(data.tolist())
-                    date_rng_str = str(date_rng.strftime('%Y-%m-%d %H:%M:%S').tolist())
-                    anomaly_list = str(anomaly.tolist())
-                    payload = {"value":data_list, "timestamp":date_rng_str, "anomaly":anomaly_list}
-                    response = requests.post(url, data=json.dumps(payload))
-                    response.raise_for_status()
-                except requests.exceptions.RequestException as e:
-                    print('Error sending data:', e)
+                # try:
+                #     url = "http://Apachi_NIFI:8443"
+                #     data_list = str(data.tolist())
+                #     date_rng_str = str(date_rng.strftime('%Y-%m-%d %H:%M:%S').tolist())
+                #     anomaly_list = str(anomaly.tolist())
+                #     payload = {"value":data_list, "timestamp":date_rng_str, "anomaly":anomaly_list}
+                #     response = requests.post(url, data=json.dumps(payload))
+                #     response.raise_for_status()
+                # except requests.exceptions.RequestException as e:
+                #     print('Error sending data:', e)
 
                 yield ({'value': data, 'timestamp': date_rng, 'anomaly': anomaly},
                        {'id': str(counter) + '.csv',

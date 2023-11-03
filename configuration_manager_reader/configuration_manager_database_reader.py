@@ -22,7 +22,7 @@ class DatabaseReader(ConfigurationManager):
             'data_size': simulator.data_size,
             'use_case_name':simulator.use_case_name,
             'time_series_type':simulator.time_series_type,
-            'producer_type':simulator.producer_type,
+            'sink_name':simulator.sink_name,
             'process_id':simulator.process_id,
             'status':simulator.status,
             'metadata':simulator.metadata,
@@ -56,7 +56,6 @@ class DatabaseReader(ConfigurationManager):
 
         simulator_data['configurations']=configurations_data
 
-        # Move the following code here to ensure it has access to self.simulator_name
         frequencies = [config_data['frequency'] for config_data in configurations_data]
         noise_level = [config_data['noise_level'] for config_data in configurations_data]
         trends = [config_data['trend_coefficients'] for config_data in configurations_data]

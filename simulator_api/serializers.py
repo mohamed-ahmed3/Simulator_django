@@ -35,6 +35,8 @@ class ConfigurationSerializer(serializers.ModelSerializer):
             'outlier_percentage',
             'cycle_component_amplitude',
             'cycle_component_frequency',
+            'generator_id',
+            'attribute_id',
             'seasonality_components'
         ]
 
@@ -124,7 +126,7 @@ class SimulatorSerializer(serializers.ModelSerializer):
             'data_size',
             'use_case_name',
             'time_series_type',
-            'producer_type',
+            'sink_name',
             'process_id',
             'status',
             'metadata',

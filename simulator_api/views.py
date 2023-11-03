@@ -1,3 +1,4 @@
+import datetime
 import os
 
 from django.http import JsonResponse
@@ -13,8 +14,9 @@ import csv
 
 from configuration_manager_creator import ConfigurationManagerCreator
 from data_simulator import DataGenerator
-from data_producer import DataProducerFileCreation
+from data_producer_file_creator import DataProducerFileCreation
 from .serializers import *
+from kafka.kafka_consumer import *
 
 
 class SimulatorListing(ListCreateAPIView):
@@ -136,36 +138,57 @@ class SimulatorRunning(APIView):
             simulator.status = "Running"
             simulator.save()
 
+            print(f"before thread {datetime.datetime.now()}")
             stop_simulator_flags[simulator.process_id] = threading.Event()
             try:
                 print(simulator.status)
                 configuration_manager = ConfigurationManagerCreator.create("db", simulator.name)
                 data_simulator = DataGenerator(configuration_manager)
-                csv_file_name = f"{simulator.name}_data.csv"
-                csv_file_path = os.path.join('sample_datasets', csv_file_name)
-                meta_data_producer = DataProducerFileCreation.create(csv_file_path)
 
-                meta_data = []
-                for (data, meta_data_point) in data_simulator.generate():
-                    if stop_simulator_flags[simulator.process_id].is_set():
-                        del stop_simulator_flags[simulator.process_id]
-                        return
-                    DataProducerFileCreation.create(f"sample_datasets/{meta_data_point['id']}").produce(data)
-                    meta_data.append(meta_data_point)
+                if simulator.sink_name == "Kafka":
+                    sink = simulator.sink_name
+                    meta_data_producer = DataProducerFileCreation.create(sink)
+                    meta_data = {}
 
-                meta_data_producer.produce(meta_data)
+                    for (data, mete_data_point) in data_simulator.generate():
+                        if stop_simulator_flags[simulator.process_id].is_set():
+                            del stop_simulator_flags[simulator.process_id]
+                            return
+                        for configuration in simulator.configurations.all():
+                            meta_data["attribute_id"] = configuration.attribute_id
+                            meta_data["value"] = data["value"].iloc[-1]
+                            meta_data["timestamp"] = str(data["timestamp"])
+                            meta_data["asset_id"] = configuration.generator_id
+                            consume('simulated_data')
+                            meta_data_producer.produce(meta_data)
 
-                data = []
-                with open(csv_file_path, 'r') as csv_file:
-                    csv_reader = csv.DictReader(csv_file)
-                    for row in csv_reader:
-                        data.append(row)
+                elif simulator.sink_name == "CSV":
+                    csv_file_name = f"{simulator.name}_data.csv"
+                    sink = os.path.join('sample_datasets', csv_file_name)
 
-                data_json = json.dumps(data)
-                simulator.metadata = data_json
-                simulator.status = "Succeeded"
-                simulator.save()
-                print(simulator.status)
+                    meta_data_producer = DataProducerFileCreation.create(sink)
+
+                    meta_data = []
+                    for (data, meta_data_point) in data_simulator.generate():
+                        if stop_simulator_flags[simulator.process_id].is_set():
+                            del stop_simulator_flags[simulator.process_id]
+                            return
+                        DataProducerFileCreation.create(f"sample_datasets/{meta_data_point['id']}").produce(data)
+                        meta_data.append(meta_data_point)
+
+                    meta_data_producer.produce(meta_data)
+
+                    data = []
+                    with open(sink, 'r') as csv_file:
+                        csv_reader = csv.DictReader(csv_file)
+                        for row in csv_reader:
+                            data.append(row)
+
+                    data_json = json.dumps(data)
+                    simulator.metadata = data_json
+                    simulator.status = "Succeeded"
+                    simulator.save()
+                    print(simulator.status)
 
             except Exception as e:
                 simulator.status = "Failed"
