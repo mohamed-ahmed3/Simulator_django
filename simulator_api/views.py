@@ -149,18 +149,36 @@ class SimulatorRunning(APIView):
                     sink = simulator.sink_name
                     meta_data_producer = DataProducerFileCreation.create(sink)
                     meta_data = {}
-
-                    for (data, mete_data_point) in data_simulator.generate():
+                    simulator_data = []
+                    for (data, meta_data_point) in data_simulator.generate():
                         if stop_simulator_flags[simulator.process_id].is_set():
                             del stop_simulator_flags[simulator.process_id]
                             return
+                        simulator_data.append(meta_data_point)
+                        data_df = pd.DataFrame(simulator_data)
+                        os.makedirs(os.path.dirname("./kafka_datasets"), exist_ok=True)
+
+                        data_df.to_csv(f"./kafka_datasets/metadata.csv", encoding='utf-8', index=False)
+
                         for configuration in simulator.configurations.all():
                             meta_data["attribute_id"] = configuration.attribute_id
                             meta_data["value"] = data["value"].iloc[-1]
-                            meta_data["timestamp"] = str(data["timestamp"])
+                            meta_data["timestamp"] = str(data["timestamp"][0])
                             meta_data["asset_id"] = configuration.generator_id
-                            consume('simulated_data')
+                            consume('kafka_simulated_data')
                             meta_data_producer.produce(meta_data)
+
+                    data = []
+                    with open("./kafka_datasets/metadata.csv", 'r') as csv_file:
+                        csv_reader = csv.DictReader(csv_file)
+                        for row in csv_reader:
+                            data.append(row)
+
+                    data_json = json.dumps(data)
+                    simulator.metadata = data_json
+                    simulator.status = "Succeeded"
+                    simulator.save()
+                    print(simulator.status)
 
                 elif simulator.sink_name == "CSV":
                     csv_file_name = f"{simulator.name}_data.csv"

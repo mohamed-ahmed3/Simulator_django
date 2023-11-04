@@ -9,11 +9,22 @@ consumer_thread = None
 
 
 def consume(topic):
+    """
+    This method starts the polling thread of the consumer
+
+    Parameters:
+        topic (str): The topic that the consumer will subscribe to.
+
+    """
     global consumer_thread
 
     c = Consumer({'bootstrap.servers': 'kafka:9092', 'group.id': 'g1', 'auto.offset.reset': 'latest'})
 
     def poll():
+        """
+        This method polls the data from the broker in background
+
+        """
         print(f"consuming data from {topic}", flush=True)
         c.subscribe([topic])
 
