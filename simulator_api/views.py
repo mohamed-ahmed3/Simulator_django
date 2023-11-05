@@ -146,10 +146,12 @@ class SimulatorRunning(APIView):
                 data_simulator = DataGenerator(configuration_manager)
 
                 if simulator.sink_name == "Kafka":
+                    consumer1 = KafkaConsumer('kafka_simulated_data')
                     sink = simulator.sink_name
                     meta_data_producer = DataProducerFileCreation.create(sink)
                     meta_data = {}
                     simulator_data = []
+
                     for (data, meta_data_point) in data_simulator.generate():
                         if stop_simulator_flags[simulator.process_id].is_set():
                             del stop_simulator_flags[simulator.process_id]
@@ -165,7 +167,7 @@ class SimulatorRunning(APIView):
                             meta_data["value"] = data["value"].iloc[-1]
                             meta_data["timestamp"] = str(data["timestamp"][0])
                             meta_data["asset_id"] = configuration.generator_id
-                            consume('kafka_simulated_data')
+                            consumer1.consume()
                             meta_data_producer.produce(meta_data)
 
                     data = []
