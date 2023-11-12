@@ -25,6 +25,7 @@ class SimulatorListing(ListCreateAPIView):
     pagination_class = PageNumberPagination
 
 
+
 class SimulatorCreation(ListCreateAPIView):
     """
     View for creating and listing simulator instances and associated data.
@@ -138,13 +139,11 @@ class SimulatorRunning(APIView):
             simulator.status = "Running"
             simulator.save()
 
-            print(f"before thread {datetime.datetime.now()}")
             stop_simulator_flags[simulator.process_id] = threading.Event()
             try:
                 print(simulator.status)
                 configuration_manager = ConfigurationManagerCreator.create("db", simulator.name)
                 data_simulator = DataGenerator(configuration_manager)
-
                 if simulator.sink_name == "Kafka":
                     consumer1 = KafkaConsumer('kafka_simulated_data')
                     sink = simulator.sink_name
@@ -203,7 +202,6 @@ class SimulatorRunning(APIView):
                         csv_reader = csv.DictReader(csv_file)
                         for row in csv_reader:
                             data.append(row)
-
                     data_json = json.dumps(data)
                     simulator.metadata = data_json
                     simulator.status = "Succeeded"
