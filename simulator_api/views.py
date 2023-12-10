@@ -11,6 +11,7 @@ from django.db import transaction
 import threading, time
 import json
 import csv
+from collections import OrderedDict
 
 from configuration_manager_creator import ConfigurationManagerCreator
 from data_simulator import DataGenerator
@@ -23,7 +24,6 @@ class SimulatorListing(ListCreateAPIView):
     queryset = Simulator.objects.all()
     serializer_class = SimulatorSerializer
     pagination_class = PageNumberPagination
-
 
 
 class SimulatorCreation(ListCreateAPIView):
@@ -146,9 +146,10 @@ class SimulatorRunning(APIView):
                 data_simulator = DataGenerator(configuration_manager)
                 if simulator.sink_name == "Kafka":
                     consumer1 = KafkaConsumer('kafka_simulated_data')
+                    consumer1.consume()
                     sink = simulator.sink_name
                     meta_data_producer = DataProducerFileCreation.create(sink)
-                    meta_data = {}
+                    meta_data = OrderedDict()
                     simulator_data = []
 
                     for (data, meta_data_point) in data_simulator.generate():
@@ -166,7 +167,6 @@ class SimulatorRunning(APIView):
                             meta_data["value"] = data["value"].iloc[-1]
                             meta_data["timestamp"] = str(data["timestamp"][0])
                             meta_data["asset_id"] = configuration.generator_id
-                            consumer1.consume()
                             meta_data_producer.produce(meta_data)
 
                     data = []
